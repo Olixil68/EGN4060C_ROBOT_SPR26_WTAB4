@@ -8,7 +8,10 @@
   > Essentially, if a read temperature exceeds ambient environment temperature reading, then mark said pixel with the weight of the column {1-8}
   - The array containing all marked cells that exceed the ambient environment temperature
   > Once a cell is read to be higher than ambient temperature, it is added to this array
+  - Prints if there is enough heatmass detected on the thermal camera for firing
+  > If the heatmass array contains at least 32 entries, prints ("Ready to fire")
   - The average of the marked cell array
   > Sum the values of each array index and divided by the length of the array
   - The actual output of the official ErrorFind program
   > The output is a floating-point value that ranges from {1, 8} inclusive.
+  > If the output is 0.0, then the measured environment is ambient.

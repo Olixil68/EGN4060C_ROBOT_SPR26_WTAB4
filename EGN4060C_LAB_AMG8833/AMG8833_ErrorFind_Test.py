@@ -19,6 +19,11 @@ def gridErrorSolver(grid):
     gridPrinter(npGrid) # debug line
     print(f"heatmass_list: {heatmass_list}") # debug line
 
+    if(len(heatmass_list) >= 32):
+        print("Ready to fire")
+    else:
+        print("Not enough heatmass")
+
     # Find the heatmass average
     if(len(heatmass_list) == 0):
         print("heatmap_list is empty") # debug line
