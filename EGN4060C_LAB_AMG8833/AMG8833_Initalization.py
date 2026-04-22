@@ -11,20 +11,20 @@ class Thermal_Camera():
         self.sensor = []
 
     # Initialization of Sensor
-    def Thermal_Init():
+    def Thermal_Init(self):
         t0 = time.time()
         while (time.time()-t0)<1: # wait 1sec for sensor to start
             try:
                 # AD0 = GND, addr = 0x68 | AD0 = 5V, addr = 0x69
-                sensor = amg8833_i2c.AMG8833(addr=0x69) # start AMG8833
+                self.sensor = amg8833_i2c.AMG8833(addr=0x69) # start AMG8833
             except:
-                sensor = amg8833_i2c.AMG8833(addr=0x68)
+                self.sensor = amg8833_i2c.AMG8833(addr=0x68)
             finally:
                 pass
         time.sleep(0.1) # wait for sensor to settle
 
         # If no device is found, exit the script
-        if sensor==[]:
+        if self.sensor==[]:
             print("No AMG8833 Found - Check Your Wiring")
             sys.exit(); # exit the app if AMG88xx is not found 
 
