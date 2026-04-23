@@ -7,7 +7,7 @@ import amg8833_i2c # Local file
 import numpy as np
 
 class Thermal_Camera():
-    def __init__(self, sensor):
+    def __init__(self):
         self.sensor = []
 
     # Initialization of Sensor
@@ -39,7 +39,7 @@ class Thermal_Camera():
                 continue
     
             # T_thermistor = sensor.read_thermistor() # read thermistor temp
-            reshaped_arr = np.reshape(pixels, pix_res)
+            cam_res = np.reshape(pixels, pix_res)
             # print("Thermistor Temperature: {0:2.2f}".format(T_thermistor)) # print thermistor temp
-            return reshaped_arr
+            return cam_res
     
