@@ -2,7 +2,7 @@
 import numpy as np
 import sys
 # import Local Files
-sys.path.append("C:\Users\lifit\Local_Documents\Python Files\EGN4060C-LAB") # Add Local Directory
+sys.path.append("../") # Add Local Directory
 import AMG8833_Initalization # Local File
 
 def ErrorFind(grid):

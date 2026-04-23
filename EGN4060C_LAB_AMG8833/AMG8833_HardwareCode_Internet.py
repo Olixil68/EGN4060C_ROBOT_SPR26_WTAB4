@@ -12,11 +12,12 @@ sys.path.append('../')
 import amg8833_i2c
 import numpy as np
 import matplotlib.pyplot as plt
-#
+# matplotlib does not function without VENV on RPI5-Bookworm
+
 #####################################
 # Initialization of Sensor
 #####################################
-#
+
 t0 = time.time()
 sensor = []
 while (time.time()-t0)<1: # wait 1sec for sensor to start
