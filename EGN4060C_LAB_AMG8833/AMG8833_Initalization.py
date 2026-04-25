@@ -38,8 +38,17 @@ class Thermal_Camera():
             if status: # if error in pixel, re-enter loop and try again
                 continue
     
-            # T_thermistor = sensor.read_thermistor() # read thermistor temp
+            T_thermistor = self.sensor.read_thermistor() # read thermistor temp
             cam_res = np.reshape(pixels, pix_res)
             # print("Thermistor Temperature: {0:2.2f}".format(T_thermistor)) # print thermistor temp
             return cam_res
+        
+if(__name__ == "__main__"):
+    try:
+        tc1 = Thermal_Camera()
+        tc1.Thermal_Init()
+        results = tc1.Thermal_Read()
+        print(results)
+    except Exception as e:
+        print(f"Error has occured: {e}")    
     
