@@ -8,8 +8,8 @@ Every component neccessary for the robot to operate in its full scope should hav
 There is a markdown file for understanding the usage and operation of the component.
 
 ## Contributors
-- Andres Armendariz (Wheel Motors)
-- Li Fitzgerald (Thermal Camera)
+- Andres Armendariz (Wheel Motors & Electrical Manager)
+- Li Fitzgerald (Thermal Camera & Code Integrator)
 - Anthony Gendreau (Chassis)
-- August Ramberg (Firing Actuator)
-- Gabriel Rodriguez (LIDAR)
+- August Ramberg (Firing Actuator, IR Remote, Code Integrator)
+- Gabriel Rodriguez (LIDAR & General Component Programmer)
