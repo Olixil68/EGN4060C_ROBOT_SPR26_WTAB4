@@ -20,7 +20,7 @@
 # Expected Usage of AMG8833_ErrorFind.py
 - The file should be create an object of type "Thermal Camera"
 - This object will be initialized to turn on and then awaiting further functions
-- Other functions will read:
-  - AMG8833 data,
+- Other functions will:
+  - read AMG8833 data,
   - process it to output a detected heat column (most heatmass detected in x-axis),
   - and output a boolean for firing mechanism.
