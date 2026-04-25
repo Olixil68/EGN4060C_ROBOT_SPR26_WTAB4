@@ -11,9 +11,9 @@
 # It returns a float in [0.0, 8.0]:
 #   0.0        = ambient (nothing warm detected)
 #   1.0 – 8.0  = weighted average column of the heat mass
-#                (1 = far left, 8 = far right, ~4.5 = centred)
+#                (1 = far left, 8 = far right, ~4.5 = centered)
 #
-# main.py fires when ErrorFind returns >= 6  (heat mass on the right half).
+# main.py fires when ErrorFind returns a True on ReadyToFire function.
 # =========================
 
 import time
@@ -25,11 +25,10 @@ import numpy as np
 # The driver file (amg8833_i2c.py) must be in the project root or on sys.path.
 # ---------------------------------------------------------------------------
 try:
-    import amg8833_i2c
+    from amg8833 import amg8833_i2c
     _HARDWARE_AVAILABLE = True
 except ImportError:
     _HARDWARE_AVAILABLE = False
-
 
 # ===========================================================================
 # LOW-LEVEL HARDWARE READER  (your teammate's Thermal_Camera, tidied up)
@@ -71,7 +70,7 @@ class _AMG8833HardwareReader:
         Retries automatically if the sensor reports a pixel error.
         """
 
-        pix_res     = (8, 8)
+        pix_res = (8, 8)
         pix_to_read = 64
 
         while True:
@@ -79,7 +78,6 @@ class _AMG8833HardwareReader:
             if status:      # sensor flagged an error - retry
                 continue
             return np.reshape(pixels, pix_res)
-
 
 # ===========================================================================
 # SIMULATION FALLBACK
@@ -98,7 +96,7 @@ class _AMG8833SimReader:
     def read(self):
         import random
 
-        AMBIENT = 22.0
+        AMBIENT = 20.0
         grid = np.full((8, 8), AMBIENT)
 
         # 60% chance of a warm blob (simulates a person in view)
@@ -112,7 +110,6 @@ class _AMG8833SimReader:
                         grid[r][c] += random.uniform(6.0, 14.0)
 
         return grid
-
 
 # ===========================================================================
 # PUBLIC INTERFACE - ThermalCamera
@@ -143,16 +140,16 @@ class ThermalCamera:
 
 
 # ===========================================================================
-# ErrorFind  - teammate's heat-column scoring algorithm
+# ReadyToFire  - teammate's firing check algorithm
 # ===========================================================================
 
-def ErrorFind(grid):
+def ReadyToFire(grid, temp):
     """
     Scores an 8x8 thermal grid and returns the weighted average column
     of pixels that exceed ambient temperature (> 24 degrees C).
 
     Algorithm (from teammate's AMG8833_ErrorFind.py):
-      1. For each pixel hotter than 24 degrees C, record its 1-based column
+      1. For each pixel hotter than 20 degrees C, record its 1-based column
          number (1 = leftmost, 8 = rightmost).
       2. Collect all such column-weights into a list.
       3. Return the average of that list  ->  range [1.0, 8.0]
@@ -161,7 +158,7 @@ def ErrorFind(grid):
     The return value tells main.py WHERE heat is on the grid:
       ~1-2  far left  |  ~4-5  centre  |  ~7-8  far right
 
-    main.py fires when the score >= 6 (heat mass on right / centre-right).
+    main.py fires when the score >= 21 (length of list >= 21).
     Your team can adjust that threshold in main.py as needed.
 
     Args:
@@ -172,7 +169,7 @@ def ErrorFind(grid):
         float  0.0 (ambient) or 1.0-8.0 (weighted column average)
     """
 
-    AMBIENT_THRESHOLD = 24  # degrees C - pixels above this count as heat
+    AMBIENT_THRESHOLD = temp  # degrees C - pixels above this count as heat
 
     heatmass_list = []
     npGrid = np.array(grid)
@@ -183,17 +180,20 @@ def ErrorFind(grid):
                 # weight = 1-based column index
                 heatmass_list.append(col + 1)
 
+    print(f"[THERMAL] hot pixels: {len(heatmass_list)}")
+
     # no heat detected - ambient scene
     if len(heatmass_list) == 0:
-        return 0.0
+        return False
 
-    heatmass_avg = sum(heatmass_list) / len(heatmass_list)
+    if len(heatmass_list) >= 21:
+        return True
+    else:
+        return False
+    
+    # heatmass_center = sum(heatmass_list) / len(heatmass_list)
 
-    print(f"[THERMAL] hot pixels: {len(heatmass_list)}  |  "
-          f"heatmass_avg column: {heatmass_avg:.2f}")
-
-    return heatmass_avg
-
+    # print(f"heatmass_avg column: {heatmass_center:.2f}")
 
 # ===========================================================================
 # Optional helper - kept for debug / standalone testing

@@ -31,7 +31,6 @@ class Thermal_Camera():
     # Function to read AMG8833 data
     def Thermal_Read(self):
         pix_res = (8,8) # pixel resolution
-        zz = np.zeros(pix_res) # set array with zeros first
         pix_to_read = 64 # read all 64 pixels
         while True:
             status,pixels = self.sensor.read_temp(pix_to_read) # read pixels with status

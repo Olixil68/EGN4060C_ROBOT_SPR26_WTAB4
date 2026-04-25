@@ -11,37 +11,31 @@
 #   COOLDOWN  2-second pause, then return to SEARCH
 #
 # Real hardware modules (yours):
-#   remote_controller.py   IR sensor on GPIO 17
-#   fire_controller.py     Servo on GPIO 18
+#   remote_controller.py   IR sensor on ADC A0
+#   fire_controller.py     Servo via robot_hat I2C
 #   thermal_camera.py      AMG8833 via I2C + ErrorFind scoring
 #   amg8833_i2c.py         Low-level I2C driver (provided separately)
 #
 # Teammate stub modules (in SIM/ -- replace bodies when ready):
 #   SIM/lidar_controller.py    LidarController
 #   SIM/drive_controller.py    DriveController
-#
-# When hardware is absent (no RPi, no I2C), every module silently falls
-# back to a software simulation so the full loop can be tested on a laptop.
 # =========================
 
 import time
 
 from remote_controller    import RemoteController
 from fire_controller      import FireController
-from thermal_camera       import ThermalCamera, ErrorFind
+from amg8833              import thermal_camera
 from SIM.lidar_controller import LidarController
 from SIM.drive_controller import DriveController
 
 # -----------------------------------------------------------------------
-# FIRE THRESHOLD
-# ErrorFind returns the weighted average COLUMN (1-8) of hot pixels:
-#   ~1-2 = heat on the left
-#   ~4-5 = heat centred
-#   ~6-8 = heat on the right / centre-right
+# AMBIENT TEMPERATURE
+# ThermalCamera returns a "Fire" State based on number of hot pixels:
+# The check for hot pixels is based on environmental ambient temperature
 # Change this one value to adjust sensitivity.
 # -----------------------------------------------------------------------
-FIRE_THRESHOLD = 6.0
-
+AMBIENT_TEMP = 20.0
 
 class Robot:
 
@@ -49,10 +43,10 @@ class Robot:
 
         print("[SYSTEM] BOOTING ROBOT")
 
-        self.remote  = RemoteController(pin=17)
-        self.fire    = FireController(pin=18)
+        self.remote  = RemoteController()   # ADC A0, no GPIO pin needed
+        self.fire    = FireController()
 
-        self.thermal = ThermalCamera()
+        self.thermal = thermal_camera.ThermalCamera()
         try:
             self.thermal.init()
             print("[THERMAL] initialised successfully")
@@ -97,9 +91,8 @@ class Robot:
             elif self.state == "THERMAL":
                 print("[STATE] THERMAL CHECK")
                 grid  = self.thermal.read()
-                score = ErrorFind(grid)
-                print(f"[THERMAL] score = {score:.2f}  (threshold = {FIRE_THRESHOLD})")
-                if score >= FIRE_THRESHOLD:
+                validTarget = thermal_camera.ReadyToFire(grid, AMBIENT_TEMP)
+                if validTarget:
                     print("[THERMAL] VALID TARGET CONFIRMED")
                     self.state = "FIRE"
                 else:

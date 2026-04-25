@@ -39,7 +39,7 @@ def ReadyToFire(list):
     if(len(list) == 0):
         rtf = False
         return rtf
-    if(len(list) > 21):
+    if(len(list) >= 21):
         rtf = True
         return rtf
 
