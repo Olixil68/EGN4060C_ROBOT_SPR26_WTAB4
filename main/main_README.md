@@ -21,6 +21,7 @@ main.py creates an object for each component and initializes them.
 - lgpio
 &gt; must be installed on a linux machine
 - robot-hat
+&gt; must be installed on a raspberry pi
 - random
 
 # Main.py internal states
