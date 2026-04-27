@@ -21,10 +21,17 @@
 
 import time
 
+# imports assuming all files under root
 from remote_controller import RemoteController
 from fire_controller   import FireController
-import thermal_camera
+from thermal_camera    import ThermalCamera, ReadyToFire
 from movement          import MovementController
+
+# imports assuming direct download from github
+# from ir_remote.remote_controller import RemoteController
+# from firing.fire_controller import FireController
+# from amg8833.thermal_camera import ThermalCamera, ReadyToFire
+# from motor_lidar.movement import MovementController
 
 # -----------------------------------------------------------------------
 # AMBIENT TEMPERATURE
@@ -42,7 +49,7 @@ class Robot:
         self.remote = RemoteController()
         self.fire   = FireController()
 
-        self.thermal = thermal_camera.ThermalCamera()
+        self.thermal = ThermalCamera()
         try:
             self.thermal.init()
             print("[THERMAL] initialised successfully")
@@ -129,7 +136,7 @@ class Robot:
                 elif self.state == "THERMAL":
                     print("[STATE] THERMAL CHECK")
                     grid        = self.thermal.read()
-                    validTarget = thermal_camera.ReadyToFire(grid, AMBIENT_TEMP)
+                    validTarget = ReadyToFire(grid, AMBIENT_TEMP)
 
                     if validTarget:
                         print("[THERMAL] VALID TARGET CONFIRMED")
