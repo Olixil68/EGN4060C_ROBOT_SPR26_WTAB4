@@ -11,12 +11,15 @@ main.py creates an object for each component and initializes them.
 
 # Main.py libraries and files needed in root/ and VENV path
 - smbus
+&gt; must be installed on a linux machine
 - sys
 - time
 - amg8833_i2c.py (Local File)
 - numpy
-- rplider
-- serial
+- rplider (rplidar-robotica)
+- serial (pyserial)
+- lgpio
+&gt; must be installed on a linux machine
 
 # Main.py internal states
 main utilizes different component objects based on its internal operation state:

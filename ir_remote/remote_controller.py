@@ -1,43 +1,38 @@
 # =========================
 # REMOTE CONTROLLER (IR)
 # =========================
-# Reads IR sensor input on a GPIO pin to start the robot.
-# Falls back to mock GPIO when not running on a Raspberry Pi.
+# Reads IR sensor via lgpio on Sunfounder Robot HAT v4.
+# Sensor output is digital — must go through DIGITAL port (D0).
+# Wiring: VCC → 3.3V, GND → GND, OUT → D0 (GPIO17)
 
-try:
-    import RPi.GPIO as GPIO
-except ImportError:
-    from SIM.mock_gpio import GPIO
+import lgpio
+import time
 
+GPIO_PIN = 17  # D0 on SunFounder HAT V4
 
 class RemoteController:
     """
-    Detects a rising-edge signal on the IR sensor pin.
-    Call update() each loop tick; it returns True once per press.
+    Detects IR remote signal via lgpio on GPIO17 (D0).
+    Call update() each loop tick; returns True once per press.
     """
 
-    def __init__(self, pin=17):
-
-        self.pin = pin
-
-        GPIO.setmode(GPIO.BCM)
-        GPIO.setup(self.pin, GPIO.IN)
-
-        # track previous state for edge detection
-        self.last_state = 0
+    def __init__(self, pin=None, adc_channel=None):
+        # pin/adc_channel kept for backwards compatibility, not used
+        self.chip = lgpio.gpiochip_open(0)
+        lgpio.gpio_claim_input(self.chip, GPIO_PIN, lgpio.SET_PULL_UP)
+        self.last_state = 1  # idle is HIGH (pull-up)
+        print("[IR] RemoteController ready on GPIO17 (D0)")
 
     def update(self):
-        """Returns True on the rising edge (button press), False otherwise."""
-
-        signal = GPIO.input(self.pin)
-
-        if signal == 1 and self.last_state == 0:
-            self.last_state = 1
+        """Returns True on falling edge (button press), False otherwise."""
+        val = lgpio.gpio_read(self.chip, GPIO_PIN)
+        if val == 0 and self.last_state == 1:
+            self.last_state = 0
             print("[IR] START SIGNAL DETECTED")
             return True
-
-        self.last_state = signal
+        self.last_state = val
         return False
 
     def cleanup(self):
-        GPIO.cleanup()
+        lgpio.gpiochip_close(self.chip)
+        print("[IR] GPIO released")
