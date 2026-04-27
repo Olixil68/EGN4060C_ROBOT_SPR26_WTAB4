@@ -1,19 +1,18 @@
 # =========================
 # THERMAL CAMERA (AMG8833)
 # =========================
-# Provides ThermalCamera and ErrorFind to main.py.
+# Provides ThermalCamera and ReadyToFire to main.py.
 #
 # ThermalCamera wraps the real AMG8833 hardware class and falls back
 # to a software simulation automatically when the hardware / i2c driver
 # is not present (e.g. running on a laptop for testing).
 #
-# ErrorFind is the heat-column scoring function written by your teammate.
-# It returns a float in [0.0, 8.0]:
-#   0.0        = ambient (nothing warm detected)
-#   1.0 – 8.0  = weighted average column of the heat mass
-#                (1 = far left, 8 = far right, ~4.5 = centered)
+# ReadyToFire is the heat-column scoring function written by your teammate.
+# This outputs a boolean if the detected object is a valid target.
+# It marked heated pixels into an array and counts the number of heated pixel instances
+#   len(heatmass_list) > 21, output = True
 #
-# main.py fires when ErrorFind returns a True on ReadyToFire function.
+# main.py fires when the ReadyToFire function returns a True.
 # =========================
 
 import time
@@ -25,6 +24,8 @@ import numpy as np
 # The driver file (amg8833_i2c.py) must be in the project root or on sys.path.
 # ---------------------------------------------------------------------------
 try:
+    # for PI's VENV
+    # import amg8833_i2c
     from amg8833 import amg8833_i2c
     _HARDWARE_AVAILABLE = True
 except ImportError:
