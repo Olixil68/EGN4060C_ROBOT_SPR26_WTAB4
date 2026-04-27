@@ -20,6 +20,7 @@ main.py creates an object for each component and initializes them.
 - serial (pyserial)
 - lgpio
 &gt; must be installed on a linux machine
+- robot-hat
 
 # Main.py internal states
 main utilizes different component objects based on its internal operation state:
