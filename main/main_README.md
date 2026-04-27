@@ -20,6 +20,7 @@ main.py creates an object for each component and initializes them.
 
 # Main.py internal states
 main utilizes different component objects based on its internal operation state:
+&gt; main iterates down the list below until program is halted by user
 - IDLE      wait for IR remote start signal
 - SEARCH    random search pattern + LIDAR scanning for objects
 - APPROACH  align and close in until object is within ~1 ft (305 mm)
