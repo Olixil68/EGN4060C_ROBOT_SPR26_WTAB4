@@ -7,6 +7,9 @@ It fires a Gel Blaster at objects with high heat mass detected on the Thermal Ca
 Every component neccessary for the robot to operate in its full scope should have a folder for said part. 
 There is a markdown file for understanding the usage and operation of the component.
 
+## Archive Folder
+Old files made when everyone worked on component files individually before integration
+
 ## Contributors
 - Andres Armendariz (Wheel Motors & Electrical Manager)
 - Li Fitzgerald (Thermal Camera & Code Integrator)
