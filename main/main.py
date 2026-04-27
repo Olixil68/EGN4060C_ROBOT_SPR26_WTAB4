@@ -1,52 +1,46 @@
 # =========================
 # MAIN — ROBOT STATE MACHINE
 # =========================
-# Coordinates all subsystems through a 6-state machine:
+# Coordinates all subsystems through a 7-state machine:
 #
 #   IDLE      wait for IR remote start signal
-#   SEARCH    drive forward + LIDAR scan for objects
-#   APPROACH  close in until object is within 3.0 m
+#   SEARCH    random search pattern + LIDAR scanning for objects
+#   APPROACH  align and close in until object is within ~1 ft (305 mm)
 #   THERMAL   confirm target with AMG8833 heat camera
 #   FIRE      execute servo firing sequence
 #   COOLDOWN  2-second pause, then return to SEARCH
+#   ESCAPE    180° turn + drive away after cold target (box), then SEARCH
 #
-# Real hardware modules (yours):
+# Hardware modules:
 #   remote_controller.py   IR sensor on ADC A0
 #   fire_controller.py     Servo via robot_hat I2C
-#   thermal_camera.py      AMG8833 via I2C + ErrorFind scoring
-#   amg8833_i2c.py         Low-level I2C driver (provided separately)
-#
-# Teammate stub modules (in SIM/ -- replace bodies when ready):
-#   SIM/lidar_controller.py    LidarController
-#   SIM/drive_controller.py    DriveController
+#   thermal_camera.py      AMG8833 via I2C + ReadyToFire scoring
+#   amg8833_i2c.py         Low-level I2C driver
+#   movement.py            LIDAR + Arduino serial (MovementController)
 # =========================
 
 import time
 
-from remote_controller    import RemoteController
-from fire_controller      import FireController
-from amg8833              import thermal_camera
-# for PI's ENV
-# import thermal_camera
-from lidar_controller import LidarController
-from drive_controller import DriveController
+from remote_controller import RemoteController
+from fire_controller   import FireController
+import thermal_camera
+from movement          import MovementController
 
 # -----------------------------------------------------------------------
 # AMBIENT TEMPERATURE
-# ThermalCamera returns a "Fire" State based on number of hot pixels:
-# The check for hot pixels is based on environmental ambient temperature
-# Change this one value to adjust sensitivity.
+# ThermalCamera.ReadyToFire fires when >= 21 pixels exceed this threshold.
+# Adjust to match your environment before the demo.
 # -----------------------------------------------------------------------
 AMBIENT_TEMP = 20.0
+
 
 class Robot:
 
     def __init__(self):
-
         print("[SYSTEM] BOOTING ROBOT")
 
-        self.remote  = RemoteController()   # ADC A0, no GPIO pin needed
-        self.fire    = FireController()
+        self.remote = RemoteController()
+        self.fire   = FireController()
 
         self.thermal = thermal_camera.ThermalCamera()
         try:
@@ -55,11 +49,16 @@ class Robot:
         except Exception as e:
             print(f"[THERMAL] initialisation failed: {e}")
 
-        self.lidar = LidarController()
-        self.drive = DriveController()
+        self.movement = MovementController()
+        try:
+            self.movement.connect()
+            print("[MOVEMENT] initialised successfully")
+        except Exception as e:
+            print(f"[MOVEMENT] initialisation failed: {e}")
 
         self.state = "IDLE"
         print("[SYSTEM] READY - waiting for IR start signal")
+
     # --------------------------------------------------
     # CLEAN SHUTDOWN
     # --------------------------------------------------
@@ -67,13 +66,13 @@ class Robot:
         print("[SYSTEM] SHUTTING DOWN")
 
         try:
-            self.drive.stop()
-        except:
+            self.movement.disconnect()
+        except Exception:
             pass
 
         try:
             self.fire.cleanup()
-        except:
+        except Exception:
             pass
 
         print("[SYSTEM] SAFE EXIT COMPLETE")
@@ -86,66 +85,99 @@ class Robot:
         try:
             while True:
 
+                # ==============================
+                # IDLE — wait for IR start
+                # ==============================
                 if self.state == "IDLE":
                     print("[STATE] IDLE")
                     if self.remote.update():
                         print("[IR] START RECEIVED")
+                        self.movement.reset_search()
                         self.state = "SEARCH"
 
+                # ==============================
+                # SEARCH — random pattern until LIDAR detects object
+                # ==============================
                 elif self.state == "SEARCH":
                     print("[STATE] SEARCH")
-                    self.drive.forward()
-                    detected, distance = self.lidar.detect()
+                    detected, distance_m, aligned = self.movement.search_tick()
                     if detected:
-                        print(f"[LIDAR] object detected at {distance:.2f} m")
+                        print(f"[LIDAR] object detected at {distance_m:.2f} m")
                         self.state = "APPROACH"
-                    time.sleep(0.2)
+                    time.sleep(0.1)
 
+                # ==============================
+                # APPROACH — rotate to face, then drive to ~1 ft
+                # ==============================
                 elif self.state == "APPROACH":
                     print("[STATE] APPROACH")
-                    self.drive.forward()
-                    detected, distance = self.lidar.detect()
-                    if distance is not None and distance <= 3.0:
-                        print(f"[LIDAR] target in range ({distance:.2f} m) - stopping")
-                        self.drive.stop()
-                        self.state = "THERMAL"
-                    time.sleep(0.2)
+                    in_position, detected, distance_m, aligned = self.movement.approach_tick()
 
+                    if not detected:
+                        print("[LIDAR] target lost - returning to SEARCH")
+                        self.movement.reset_search()
+                        self.state = "SEARCH"
+                    elif in_position:
+                        print(f"[LIDAR] target in range ({distance_m:.2f} m) - stopping")
+                        self.state = "THERMAL"
+
+                    time.sleep(0.1)
+
+                # ==============================
+                # THERMAL — confirm heat signature
+                # ==============================
                 elif self.state == "THERMAL":
                     print("[STATE] THERMAL CHECK")
-                    grid  = self.thermal.read()
+                    grid        = self.thermal.read()
                     validTarget = thermal_camera.ReadyToFire(grid, AMBIENT_TEMP)
+
                     if validTarget:
                         print("[THERMAL] VALID TARGET CONFIRMED")
                         self.state = "FIRE"
                     else:
-                        print("[THERMAL] no valid target - returning to search")
-                        self.state = "SEARCH"
+                        print("[THERMAL] no valid target - escaping")
+                        self.state = "ESCAPE"
 
+                # ==============================
+                # FIRE — shoot water
+                # ==============================
                 elif self.state == "FIRE":
                     print("[STATE] FIRE")
-                    self.drive.stop()
                     self.fire.fire()
                     self.state = "COOLDOWN"
 
+                # ==============================
+                # COOLDOWN — brief pause, then back to SEARCH
+                # (robot will immediately re-detect the box if still there,
+                #  thermal scan will fail, ESCAPE will handle it)
+                # ==============================
                 elif self.state == "COOLDOWN":
                     print("[STATE] COOLDOWN")
                     time.sleep(2)
-                    
-                    # self.state = "SEARCH"
+                    self.movement.reset_search()
+                    self.state = "SEARCH"
+
                     # ==============================
-                    # TEST MODE: stop after one fire
-                    # When real competition mode is
-                    # needed, replace this block with:
-                    #   self.state = "SEARCH"
+                    # NOTE: for single-shot test mode, replace the two
+                    # lines above with:
+                    #   print("[SYSTEM] TEST COMPLETE — SHUTTING DOWN")
+                    #   self.shutdown()
+                    #   return
                     # ==============================
-                    print("[SYSTEM] TEST COMPLETE — SHUTTING DOWN")
-                    self.shutdown()
-                    return
+
+                # ==============================
+                # ESCAPE — cold target (box): 180° turn + drive away
+                # ==============================
+                elif self.state == "ESCAPE":
+                    print("[STATE] ESCAPE")
+                    self.movement.escape()          # blocks ~4 seconds
+                    self.movement.reset_search()
+                    self.state = "SEARCH"
 
         except KeyboardInterrupt:
             print("\n[SYSTEM] Ctrl+C received")
             self.shutdown()
+
 
 if __name__ == "__main__":
     robot = Robot()
