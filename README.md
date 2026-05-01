@@ -1,5 +1,5 @@
 # Documentation of Robot Scope and Contributors for Introduction to Robotics Final Project
-![ADEPT - Tank Robot with Gel Blaster gun mounted on top with LIDAR and Thermal Camera on front](ADEPT.jpg)
+![ADEPT - Tank Robot with Gel Blaster gun mounted on top with LIDAR and Thermal Camera on front](ADEPT_Cropped.jpg)
 ## Robot Scope
 The Autonomous Detection and Engagement Platform Tank (ADEPT) navigates a space with LIDAR and Tank Tread Wheels.
 It fires a Gel Blaster at objects with high heat mass detected on the Thermal Camera.
