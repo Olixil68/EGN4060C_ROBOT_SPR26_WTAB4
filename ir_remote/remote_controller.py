@@ -6,7 +6,6 @@
 # Wiring: VCC → 3.3V, GND → GND, OUT → D0 (GPIO17)
 
 import lgpio
-import time
 
 GPIO_PIN = 17  # D0 on SunFounder HAT V4
 

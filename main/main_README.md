@@ -35,3 +35,4 @@ main utilizes different component objects based on its internal operation state:
 - COOLDOWN  2-second pause, then return to SEARCH
 - ESCAPE    180° turn + drive away after cold target (box), then SEARCH
 
+- Once program is halted by user, SHUTDOWN is called
